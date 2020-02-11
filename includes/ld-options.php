@@ -21,6 +21,16 @@ function woorcp_add_ld_group( $group_id, $data ) {
 		learndash_set_groups_administrators( $ld_group_id , (array) $data["owner_id"] );
 	}
 
+	$member 		= new RCP_Member( $data["owner_id"] );
+	$level_id 		= $member->get_subscription_id();
+	$ld_courses 	= get_metadata( 'level', $level_id, '_learndash_restrict_content_pro_courses', true );
+
+	if ( !empty( $ld_courses ) ) {
+		foreach ( $ld_courses as $course_id ) {
+			ld_update_course_group_access( $course_id, $ld_group_id, false );
+		}
+	}
+
 }
 add_action( "rcpga_db_groups_post_insert", "woorcp_add_ld_group", 15, 2);
 
@@ -40,11 +50,16 @@ function woorcp_add_rcp_member_ld_group( $user_id, $args, $group_id ) {
 	
 	$query = new WP_Query( $args );
 
+	$member = new RCP_Member( $user_id );
+	$member->set_role( 'subscriber' );
+
 	if( $query->found_posts > 0 ) {
 		$ld_group_id = $query->posts[0]->ID;
 
-		learndash_set_groups_users( $ld_group_id, array( $user_id ) );
+		ld_update_group_access( $user_id, $ld_group_id, false );
 	}
+
+
 
 }
 add_action( "rcpga_add_member_to_group_after", "woorcp_add_rcp_member_ld_group", 15, 3 );

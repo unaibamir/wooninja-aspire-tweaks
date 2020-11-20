@@ -194,7 +194,7 @@ class WooRCP_Corporate {
 		$amount 		= $rcp_levels_db->get_meta( $level_id, 'per_member_price', true );
 		
 		if( empty($amount) || $amount <= 0 ) {
-			rcp_log( sprintf( __('WOORCP: The subscription level %s has no additional member price, existing.', 'rcp') , $plan->name ) );
+			rcp_log( sprintf( __('WOORCP: The subscription level "%s" has no additional member price, existing.', 'rcp') , $plan->name ) );
 			return;
 		}
 
@@ -205,6 +205,21 @@ class WooRCP_Corporate {
 
 		try {
 			$s_plan 		= \Stripe\Plan::retrieve($plan_id);
+			$product_id 	= $s_plan->product;
+			$s_plan->delete();
+			rcp_log( sprintf( 'WOORCP: Successfully deleted subscription plan from stripe #%s.', $plan_id ) );
+			
+			// delete product
+			$product = \Stripe\Product::retrieve($product_id);
+			$product->delete();
+
+			rcp_log( sprintf( 'WOORCP: Successfully deleted subscription product from stripe #%s.', $product_id ) );
+
+			$product = \Stripe\Product::create( array(
+				'name' => $name,
+				'type' => 'service'
+			) );
+
 		} catch ( Exception $e ) {}
 
 		if( $create_plan && $s_plan ) {
@@ -213,9 +228,7 @@ class WooRCP_Corporate {
 			//$additional_member_price = round(rcp_stripe_get_currency_multiplier() * $additional_member_price, 0);
 
 			//$s_plan 		= \Stripe\Plan::retrieve($plan_id);
-			$s_product_id 	= $s_plan->product;
-
-			$s_plan->delete();
+			$s_product_id 	= $product->id;
 
 			$additional_member_price = $amount;
 

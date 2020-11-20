@@ -240,30 +240,35 @@ class WOORCP_Options {
 		$additional_member_price = round(rcp_stripe_get_currency_multiplier() * $amount, 0);
 
 		$create_plan = true;
-		$s_plan = false;
+		$s_plan = true;
 		try {
 
 			$s_plan = \Stripe\Plan::retrieve($plan_id);
 			$plan_deleted = $s_plan->delete();
 			$create_plan = true;
-			rcp_log( sprintf( 'WOORCP: Successfully deleted subscription plan from stripe #%d.', absint( $plan_id ) ) );
+			rcp_log( sprintf( 'Successfully deleted subscription plan from stripe # %s.', $plan_id ) );
 
 			// delete product
-			/*$product = \Stripe\Product::retrieve($s_plan->product);
+			$product = \Stripe\Product::retrieve($s_plan->product);
 			$product->delete();
-			rcp_log( sprintf( 'WOORCP: Successfully deleted subscription product from stripe #%d.', absint( $plan_id ) ) );
-			unset($product, $s_plan);*/
+			rcp_log( sprintf( 'Successfully deleted subscription product from stripe # %s.', $plan_id ) );
+			unset($product, $s_plan);
 
 		} catch ( Exception $e ) {}
 
 		if( $create_plan && $s_plan ) {
+
+			$product = \Stripe\Product::create( array(
+				'name' => $name,
+				'type' => 'service'
+			) );
 
 			$plan = \Stripe\Plan::create( array(
 				"interval"       => $interval,
 				"interval_count" => $interval_count,
 				"currency"       => $currency,
 				"id"             => $plan_id,
-				"product"        => $s_plan->product,
+				"product"        => $product->id,
 				"billing_scheme" => "tiered",
 				"tiers_mode"     => "graduated",
 				"tiers"          => array(
@@ -280,10 +285,8 @@ class WOORCP_Options {
 				)
 			));
 
-			rcp_log( sprintf( 'WOORCP: Successfully created subscription plan on stripe #%d.', absint( $plan->id ) ) );
+			rcp_log( sprintf( 'WOORCP: Successfully created subscription plan on stripe # %s.', $plan->id ) );
 		}
-
-		rcp_log( sprintf( 'WOORCP: Successfully created subscription plan on stripe #%d.', absint( $plan->id ) ) );
 		
 	}
 

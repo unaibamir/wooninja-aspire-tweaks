@@ -420,7 +420,7 @@ Class Group_member_tweaks {
 		    return;
 
 		$plan           		= rcp_get_subscription_details( $subscription_id );
-		$plan_id        		= sprintf( '%s-%s-%s', strtolower( str_replace( ' ', '', $plan->name ) ), $plan->price, $plan->duration . $plan->duration_unit );
+		$plan_id        		= $this->generate_plan_id( $plan );
 
 		$s_subscription = \Stripe\Subscription::retrieve($stripe_sub_id);
 		$s_subscription->prorate = false;
